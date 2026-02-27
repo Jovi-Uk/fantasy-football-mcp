@@ -174,6 +174,7 @@ mcp = FastMCP(
     lifespan=server_lifespan,
     # json_response=True enables structured JSON responses
     # which some clients prefer over text
+    stateless_http=True,   # Railway may route across processes — each request must be self-contained
     json_response=True,
     # Disable DNS rebinding protection to allow proxied traffic
     # (ngrok, Railway, Render, etc. forward requests with different Host headers)
