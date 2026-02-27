@@ -1,0 +1,37 @@
+# docker-compose.yml
+# 
+# This spins up PostgreSQL with the pgvector extension.
+# pgvector adds vector similarity search to PostgreSQL —
+# it's what enables semantic memory in our MCP server.
+#
+# Usage:
+#   docker compose up -d        # Start the database
+#   docker compose down         # Stop it
+#   docker compose down -v      # Stop and delete all data
+#
+# The database will be accessible at localhost:5432
+# Connection string: postgresql://postgres:fantasyfootball@localhost:5432/fantasy_bot
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: fantasy-pgvector
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: fantasyfootball
+      POSTGRES_DB: fantasy_bot
+    ports:
+      - "5432:5432"
+    volumes:
+      # Persist data across container restarts
+      - pgdata:/var/lib/postgresql/data
+      # Auto-run init script on first startup
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

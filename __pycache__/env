@@ -1,0 +1,4 @@
+DATABASE_URL=postgresql://postgres:fantasyfootball@localhost:5432/fantasy_bot
+MCP_HOST=0.0.0.0
+MCP_PORT=8000
+LOG_LEVEL=INFO
