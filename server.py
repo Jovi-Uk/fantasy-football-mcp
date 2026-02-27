@@ -183,7 +183,6 @@ mcp = FastMCP(
     )
 )
 
-
 # ─────────────────────────────────────────────────────────────
 # Helper Functions
 # ─────────────────────────────────────────────────────────────
@@ -1349,35 +1348,49 @@ Rank your top 5 recommendations with:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Fantasy Football MCP Server")
-    # If PORT env var is set (e.g., by Railway/Render), default to HTTP transport
     default_transport = "http" if os.getenv("PORT") else "stdio"
     
     parser.add_argument(
-        "--transport",
-        choices=["stdio", "http"],
+        "--transport", choices=["stdio", "http"],
         default=default_transport,
         help="Transport method: 'stdio' for local dev, 'http' for network access"
     )
     parser.add_argument(
-        "--port",
-        type=int,
+        "--port", type=int,
         default=int(os.getenv("PORT", "8000")),
-        help="Port for HTTP transport (default: 8000, or PORT env var)"
+        help="Port for HTTP transport"
     )
     parser.add_argument(
-        "--host",
-        default="0.0.0.0",
-        help="Host for HTTP transport (default: 0.0.0.0)"
+        "--host", default="0.0.0.0",
+        help="Host for HTTP transport"
     )
     
     args = parser.parse_args()
     
     if args.transport == "http":
         logger.info(f"Starting with Streamable HTTP transport on {args.host}:{args.port}")
-        # Host and port are set via FastMCP settings, not run() kwargs
-        mcp.settings.host = args.host
-        mcp.settings.port = args.port
-        mcp.run(transport="streamable-http")
+        
+        # Build a Starlette app that wraps the MCP server + a health endpoint
+        from starlette.applications import Starlette
+        from starlette.responses import JSONResponse
+        from starlette.routing import Mount, Route
+        
+        async def health_check(request):
+            """Simple health endpoint for Railway/load balancers."""
+            return JSONResponse({"status": "healthy", "service": "fantasy-football-mcp"})
+        
+        # Get the MCP server's ASGI app (the Streamable HTTP handler)
+        mcp_app = mcp.streamable_http_app()
+        
+        app = Starlette(
+            routes=[
+                Route("/health", health_check, methods=["GET"]),
+                Mount("/", app=mcp_app),  # MCP handles /mcp under this mount
+            ]
+        )
+        
+        import uvicorn
+        uvicorn.run(app, host=args.host, port=args.port)
     else:
         logger.info("Starting with STDIO transport (local development)")
         mcp.run(transport="stdio")
