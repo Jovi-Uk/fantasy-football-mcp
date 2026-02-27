@@ -65,6 +65,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 from mcp.server.fastmcp import FastMCP, Context
+from mcp.server.fastmcp.server import TransportSecuritySettings
 
 # Import our modules
 from models import (
@@ -173,7 +174,12 @@ mcp = FastMCP(
     lifespan=server_lifespan,
     # json_response=True enables structured JSON responses
     # which some clients prefer over text
-    json_response=True
+    json_response=True,
+    # Disable DNS rebinding protection to allow proxied traffic
+    # (ngrok, Railway, Render, etc. forward requests with different Host headers)
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=False
+    )
 )
 
 
@@ -1367,11 +1373,10 @@ if __name__ == "__main__":
     
     if args.transport == "http":
         logger.info(f"Starting with Streamable HTTP transport on {args.host}:{args.port}")
-        mcp.run(
-            transport="streamable-http",
-            host=args.host,
-            port=args.port
-        )
+        # Host and port are set via FastMCP settings, not run() kwargs
+        mcp.settings.host = args.host
+        mcp.settings.port = args.port
+        mcp.run(transport="streamable-http")
     else:
         logger.info("Starting with STDIO transport (local development)")
         mcp.run(transport="stdio")
