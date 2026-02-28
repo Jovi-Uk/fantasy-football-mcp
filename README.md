@@ -92,7 +92,7 @@ The server will log its startup progress and be ready when you see:
 
 ## For Teammates: Connecting Dify to This MCP Server
 
-### Person 3 (Dify Workflow Builder) — How to Add the MCP Server
+### (Dify Workflow Builder) — How to Add the MCP Server
 
 Once the server is running with HTTP transport, connect it in Dify:
 
