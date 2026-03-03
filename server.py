@@ -239,7 +239,6 @@ async def ff_get_player_stats(params: PlayerStatsInput, ctx: Context) -> str:
     Returns:
         str: Player stats in requested format, or error message if not found.
     """
-    await ctx.report_progress(0.1, "Looking up player...")
     provider = _get_data_provider(ctx)
     
     result = await provider.get_player_stats(
@@ -253,7 +252,6 @@ async def ff_get_player_stats(params: PlayerStatsInput, ctx: Context) -> str:
             "use ff_search_players to find the correct name."
         )
     
-    await ctx.report_progress(0.8, "Formatting stats...")
     
     stats = result.get("stats", {})
     scoring = "ppr"  # Default; will be customizable
@@ -382,12 +380,10 @@ async def ff_compare_players(params: ComparePlayersInput, ctx: Context) -> str:
     Returns:
         str: Head-to-head comparison in requested format.
     """
-    await ctx.report_progress(0.1, f"Looking up {params.player_a}...")
     provider = _get_data_provider(ctx)
     
     # Fetch both players' data
     player_a = await provider.get_player_stats(params.player_a, params.season, params.week)
-    await ctx.report_progress(0.4, f"Looking up {params.player_b}...")
     player_b = await provider.get_player_stats(params.player_b, params.season, params.week)
     
     errors = []
@@ -398,7 +394,6 @@ async def ff_compare_players(params: ComparePlayersInput, ctx: Context) -> str:
     if errors:
         return " | ".join(errors) + ". Try using full player names."
     
-    await ctx.report_progress(0.7, "Calculating comparison...")
     
     # Calculate fantasy points for both
     scoring = params.scoring_format.value
@@ -560,7 +555,6 @@ async def ff_get_waiver_targets(params: WaiverTargetsInput, ctx: Context) -> str
     Returns:
         str: Ranked waiver wire suggestions with reasoning.
     """
-    await ctx.report_progress(0.2, f"Scanning {params.position.value} waiver wire...")
     provider = _get_data_provider(ctx)
     
     # Get all active players at the position
@@ -651,7 +645,6 @@ async def ff_get_player_trends(params: PlayerTrendsInput, ctx: Context) -> str:
     Returns:
         str: Week-by-week trend analysis.
     """
-    await ctx.report_progress(0.1, f"Analyzing trends for {params.player_name}...")
     provider = _get_data_provider(ctx)
     
     # Find the player first
@@ -665,10 +658,6 @@ async def ff_get_player_trends(params: PlayerTrendsInput, ctx: Context) -> str:
     # Collect weekly data
     weekly_data = []
     for week in range(1, params.num_weeks + 1):
-        await ctx.report_progress(
-            0.1 + (0.7 * week / params.num_weeks),
-            f"Fetching week {week}..."
-        )
         stats = await provider.get_weekly_stats(params.season, week)
         if pid in stats:
             pts = provider.calculate_fantasy_points(stats[pid], scoring)
@@ -752,7 +741,6 @@ async def ff_analyze_start_sit(params: StartSitInput, ctx: Context) -> str:
     Returns:
         str: Start/sit recommendation with reasoning.
     """
-    await ctx.report_progress(0.1, "Analyzing matchups...")
     provider = _get_data_provider(ctx)
     scoring = params.scoring_format.value
     
@@ -768,7 +756,6 @@ async def ff_analyze_start_sit(params: StartSitInput, ctx: Context) -> str:
             not_found.append(params.player_b)
         return f"Could not find: {', '.join(not_found)}"
     
-    await ctx.report_progress(0.6, "Computing recommendation...")
     
     # Calculate fantasy points
     pts_a = provider.calculate_fantasy_points(a_data.get("stats", {}), scoring)
@@ -861,7 +848,6 @@ async def ff_evaluate_trade(params: TradeEvalInput, ctx: Context) -> str:
     Returns:
         str: Trade evaluation with recommendation.
     """
-    await ctx.report_progress(0.1, "Analyzing trade values...")
     provider = _get_data_provider(ctx)
     scoring = params.scoring_format.value
     
@@ -877,7 +863,6 @@ async def ff_evaluate_trade(params: TradeEvalInput, ctx: Context) -> str:
         else:
             give_details.append({"name": name, "pts": 0, "error": "not found"})
     
-    await ctx.report_progress(0.5, "Calculating receive value...")
     
     receive_value = 0.0
     receive_details = []
@@ -1124,7 +1109,6 @@ async def ff_search_past_advice(params: SearchPastAdviceInput, ctx: Context) -> 
     """
     memory = _require_memory(ctx)
     
-    await ctx.report_progress(0.3, "Searching conversation history...")
     
     results = await memory.search_past_advice(
         user_id=params.user_id,
